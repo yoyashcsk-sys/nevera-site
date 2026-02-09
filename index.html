@@ -1,0 +1,252 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nevera – Cinematic</title>
+
+<!-- GSAP (Heavy Engine) -->
+<script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3/dist/Observer.min.js"></script>
+
+<style>
+/* =========================
+ RESET + BASE
+========================= */
+*{margin:0;padding:0;box-sizing:border-box}
+
+html,body{
+  height:100%;
+  background:#000;
+  color:#fff;
+  font-family:Helvetica Neue,Arial,sans-serif;
+  overflow:hidden;
+}
+
+/* =========================
+ SECTIONS
+========================= */
+.section{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:0;
+  pointer-events:none;
+}
+
+.section.active{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.section img,
+.section video{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.section::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.45);
+}
+
+/* =========================
+ CONTENT
+========================= */
+.content{
+  position:relative;
+  z-index:2;
+  max-width:900px;
+  text-align:center;
+  padding:20px;
+}
+
+h1,h2{
+  letter-spacing:.25em;
+  margin-bottom:20px;
+}
+
+h1{font-size:clamp(2.5rem,5vw,4.5rem)}
+h2{font-size:clamp(2rem,4vw,3.2rem)}
+
+p{
+  font-size:1.05rem;
+  opacity:.9;
+}
+
+/* =========================
+ LOGO
+========================= */
+.logo{
+  position:fixed;
+  top:25px;
+  left:30px;
+  z-index:50;
+}
+.logo img{width:60px}
+
+/* =========================
+ SECTION INDEX (MENU)
+========================= */
+.section-index{
+  position:fixed;
+  left:30px;
+  bottom:40px;
+  z-index:50;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  font-size:.75rem;
+  letter-spacing:.25em;
+}
+
+.section-index a{
+  color:#fff;
+  text-decoration:none;
+  opacity:.4;
+  transition:.3s;
+}
+
+.section-index a.active{
+  opacity:1;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGO -->
+<div class="logo">
+  <img src="logo.jpg">
+</div>
+
+<!-- SECTION INDEX -->
+<div class="section-index">
+  <a href="#" data-i="0" class="active">01 NEVERA</a>
+  <a href="#" data-i="1">02 TECHNOLOGY</a>
+  <a href="#" data-i="2">03 DEVELOPMENT</a>
+  <a href="#" data-i="3">04 ABOUT US</a>
+</div>
+
+<!-- SECTIONS (ONLY 4 REAL PAGES) -->
+<section class="section active">
+  <video muted playsinline autoplay loop>
+    <source src="hero.mp4" type="video/mp4">
+  </video>
+  <div class="content">
+    <h1>NEVERA</h1>
+    <p>Capable of exceptional speeds.</p>
+  </div>
+</section>
+
+<section class="section">
+  <img src="tech.jpg">
+  <div class="content">
+    <h2>TECHNOLOGY</h2>
+    <p>High-performance EV systems.</p>
+  </div>
+</section>
+
+<section class="section">
+  <img src="dev.jpg">
+  <div class="content">
+    <h2>DEVELOPMENT</h2>
+    <p>Engineering & testing.</p>
+  </div>
+</section>
+
+<section class="section">
+  <img src="about.jpg">
+  <div class="content">
+    <h2>ABOUT US</h2>
+    <p>Pushing technology forward.</p>
+  </div>
+</section>
+
+<script>
+/* =========================
+ HEAVY ENGINE LOGIC
+========================= */
+gsap.registerPlugin(Observer);
+
+const sections = gsap.utils.toArray(".section");
+const links = document.querySelectorAll(".section-index a");
+
+let current = 0;
+let animating = false;
+
+/* =========================
+ SHOW SECTION
+========================= */
+function goToSection(index, direction){
+  if(animating || index === current) return;
+  animating = true;
+
+  const from = sections[current];
+  const to = sections[index];
+
+  gsap.set(to,{opacity:0});
+  to.classList.add("active");
+
+  gsap.timeline({
+    onComplete:()=>{
+      from.classList.remove("active");
+      current = index;
+      syncMenu();
+      animating = false;
+    }
+  })
+  .to(from,{opacity:0,y:-direction*80,duration:.6,ease:"power3.inOut"})
+  .fromTo(to,{y:direction*80},{opacity:1,y:0,duration:.6,ease:"power3.inOut"},0);
+}
+
+/* =========================
+ MENU SYNC
+========================= */
+function syncMenu(){
+  links.forEach((l,i)=>l.classList.toggle("active",i===current));
+}
+
+/* =========================
+ SCROLL OBSERVER
+========================= */
+Observer.create({
+  type:"wheel,touch",
+  preventDefault:true,
+  tolerance:10,
+
+  onDown(){
+    let next = current + 1;
+    if(next >= sections.length) next = 0;   // DOWN = LOOP
+    goToSection(next, 1);
+  },
+
+  onUp(){
+    if(current === 0) return;              // UP = STOP
+    goToSection(current - 1, -1);
+  }
+});
+
+/* =========================
+ MENU CLICK
+========================= */
+links.forEach(link=>{
+  link.addEventListener("click",e=>{
+    e.preventDefault();
+    const i = +link.dataset.i;
+    if(i === current) return;
+    goToSection(i, i > current ? 1 : -1);
+  });
+});
+</script>
+
+</body>
+</html>
